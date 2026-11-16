@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Лаборатория: Качественные реакции на катионы (8 класс)</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1e40af;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #ca8a04;
+            --bg-panel: rgba(255, 255, 255, 0.95);
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            color: var(--text);
+            height: 100vh;
+        }
+
+        /* === СТАРТОВЫЙ ЭКРАН === */
+        #introScreen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 200;
+            background: #f8fafc;
+            overflow-y: auto;
+            padding: 40px 20px;
+        }
+
+        .intro-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .intro-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 40px 35px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);
+        }
+
+        .intro-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .intro-header h1 .flask-icon {
+            font-size: 2.4rem;
+        }
+
+        .intro-header p {
+            font-size: 1.15rem;
+            opacity: 0.92;
+            margin: 0;
+        }
+
+        .safety-warning {
+            background: #fef3c7;
+            border-left: 5px solid var(--warning);
+            padding: 18px 22px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .safety-warning .warn-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .safety-warning strong {
+            color: #92400e;
+            font-size: 1rem;
+        }
+
+        .safety-warning p {
+            margin: 4px 0 0;
+            color: #78350f;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .intro-progress {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .intro-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 10%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .intro-card {
+            background: white;
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .intro-card h2 {
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .intro-card h2 .icon {
+            font-size: 1.6rem;
+        }
+
+        .intro-card .goal-text {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #334155;
+            margin-bottom: 30px;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            border: none;
+            padding: 16px 36px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-start:active {
+            transform: translateY(0);
+        }
+
+        /* === ОСНОВНОЙ ИНТЕРФЕЙС (скрыт до старта) === */
+        #mainApp {
+            display: none;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .tube-label {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1.5px solid rgba(30, 64, 175, 0.25);
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            user-select: none;
+            transform: translateX(-50%);
+        }
+
+        .ui-layer {
+            position: fixed;
+            z-index: 10;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        header {
+            position: fixed;
+            top: 20px; left: 20px;
+            z-index: 15;
+            background: var(--bg-panel);
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
+            max-width: 500px;
+        }
+
+        h1 { margin: 0; font-size: 1.2rem; color: var(--primary-dark); }
+        p.subtitle { margin: 3px 0 0; color: #64748b; font-size: 0.85rem; }
+
+        .grade-badge {
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .controls-area {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            pointer-events: none;
+            margin-bottom: 10px;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
+        }
+
+        .reagents-panel { width: 240px; flex-shrink: 0; }
+        .reagents-panel h3 { font-size: 0.95rem; margin-bottom: 10px; color: var(--primary-dark); }
+
+        .log-panel {
+            width: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            max-height: 280px;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .log-header h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .log-counter {
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            min-width: 22px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .log-counter.has-entries {
+            background: var(--success);
+            transform: scale(1.05);
+        }
+
+        .log-entries {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 220px;
+            padding-right: 4px;
+            margin-right: -4px;
+        }
+
+        .log-entries::-webkit-scrollbar { width: 6px; }
+        .log-entries::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .log-entries::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .log-entries::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .log-entries { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
+        .log-entries ul { list-style: none; padding: 0; margin: 0; }
+
+        .log-entries li {
+            padding: 7px 9px;
+            margin-bottom: 5px;
+            background: #f8fafc;
+            border-left: 3px solid var(--primary);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            line-height: 1.35;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .log-entries li:last-child { margin-bottom: 0; }
+        .log-entries li strong {
+            color: var(--primary-dark);
+            font-size: 0.75rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .log-placeholder {
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 0.82rem;
+            text-align: center;
+            padding: 18px 10px;
+            line-height: 1.5;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .reagent-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        button.reagent-btn {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 9px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-size: 0.82rem;
+        }
+
+        button.reagent-btn:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+
+        button.reagent-btn strong {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 2px;
+            font-size: 0.85rem;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            pointer-events: auto;
+            z-index: 20;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 320px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 64, 175, 0.95);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            text-align: center;
+            z-index: 20;
+            font-size: 0.9rem;
+        }
+
+        .notification.show { opacity: 1; }
+
+        .answer-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 340px;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+            pointer-events: auto;
+            padding: 16px;
+            z-index: 15;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .answer-panel h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary-dark);
+            font-size: 1rem;
+        }
+
+        .answer-panel > p {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 0 0 12px 0;
+        }
+
+        .tube-answer-block {
+            margin-bottom: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .answer-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tube-answer-block.correct .answer-row {
+            border-color: var(--success);
+            background: #dcfce7;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .tube-answer-block.incorrect .answer-row {
+            border-color: var(--danger);
+            background: #fee2e2;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .answer-row label {
+            font-weight: 600;
+            min-width: 60px;
+            font-size: 0.85rem;
+        }
+
+        .answer-row select {
+            flex-grow: 1;
+            padding: 5px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+
+        .answer-row select:focus {
+            outline: 2px solid var(--primary);
+            border-color: var(--primary);
+        }
+
+        .answer-row .status-icon {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tube-answer-block.correct .status-icon,
+        .tube-answer-block.incorrect .status-icon { opacity: 1; }
+
+        .review-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s ease;
+            background: #f0f9ff;
+            border: 2px solid transparent;
+            border-top: none;
+            padding: 0 10px;
+            font-size: 0.82rem;
+        }
+
+        .tube-answer-block.correct .review-details {
+            max-height: 400px;
+            padding: 10px;
+            background: #f0fdf4;
+            border-color: var(--success);
+            border-top: 1px dashed var(--success);
+        }
+
+        .tube-answer-block.incorrect .review-details {
+            max-height: 400px;
+            padding: 10px;
+            background: #fef2f2;
+            border-color: var(--danger);
+            border-top: 1px dashed var(--danger);
+        }
+
+        .review-details .correct-cation {
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .tube-answer-block.incorrect .review-details .correct-cation {
+            color: var(--primary-dark);
+        }
+
+        .review-details .equations-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin: 6px 0 3px;
+            font-weight: 600;
+        }
+
+        .review-details .equation-line {
+            padding: 3px 7px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-size: 0.82rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .review-details .equation-line .reagent-tag {
+            display: inline-block;
+            background: #dbeafe;
+            color: var(--primary-dark);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .review-details .no-reaction {
+            font-style: italic;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            padding: 3px 7px;
+        }
+
+        .answer-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .answer-buttons button {
+            flex-grow: 1;
+            padding: 9px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-check { background: var(--primary); color: white; }
+        .btn-check:hover:not(:disabled) { background: var(--primary-dark); }
+        .btn-retry {
+            background: white;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-retry:hover { background: #f1f5f9; }
+
+        .score-display {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .score-display.show { display: block; }
+        .score-display.good { background: #dcfce7; color: var(--success); }
+        .score-display.medium { background: #fef3c7; color: var(--warning); }
+        .score-display.poor { background: #fee2e2; color: var(--danger); }
+
+        .hint-box {
+            margin-top: 10px;
+            padding: 8px;
+            background: #fef3c7;
+            border-left: 3px solid var(--warning);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .hint-box strong { color: #92400e; }
+
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            z-index: 300;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        @media (max-width: 900px) {
+            .intro-header h1 { font-size: 1.5rem; }
+            .intro-header p { font-size: 1rem; }
+            .intro-card { padding: 25px; }
+            .ui-layer { width: 100%; height: 100%; }
+            header { max-width: 90%; }
+            .controls-area { flex-wrap: wrap; }
+            .reagents-panel, .log-panel {
+                width: calc(50% - 10px);
+                max-height: 180px;
+            }
+            .log-entries { max-height: 110px; }
+            .answer-panel {
+                position: fixed;
+                top: auto;
+                bottom: 20px;
+                right: 20px;
+                left: 20px;
+                width: auto;
+                max-height: 40vh;
+            }
+            .status-bar { left: 20px; transform: none; top: 70px; }
+            .notification {
+                left: 50%;
+                transform: translateX(-50%);
+                bottom: 220px;
+            }
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="loader">Загрузка лаборатории...</div>
+
+    <!-- === СТАРТОВЫЙ ЭКРАН === -->
+    <div id="introScreen">
+        <div class="intro-container">
+            <div class="intro-header">
+                <h1><span class="flask-icon">🧪</span> Качественные реакции на катионы</h1>
+                <p>Интерактивная лабораторная работа по неорганической химии</p>
+            </div>
+
+            <div class="safety-warning">
+                <span class="warn-icon">⚠️</span>
+                <div>
+                    <strong>Внимание!</strong>
+                    <p>Данная лабораторная работа является виртуальной моделью. В реальной лаборатории работы с щелочами, аммиаком и солями тяжелых металлов требуют соблюдения мер предосторожности: защитные очки, перчатки, работа в вытяжном шкафу.</p>
+                </div>
+            </div>
+
+            <div class="intro-progress">
+                <div class="intro-progress-fill" id="introProgress"></div>
+            </div>
+
+            <div class="intro-card">
+                <h2><span class="icon">📋</span> Цель работы</h2>
+                <p class="goal-text">
+                    Научиться определять катионы металлов в растворах с помощью характерных качественных реакций.
+                </p>
+
+                <button class="btn-start" id="startBtn" onclick="app.startExperiment()">
+                    🔬 Начать исследование
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === ОСНОВНОЕ ПРИЛОЖЕНИЕ === -->
+    <div id="mainApp">
+        <div id="canvas-container"></div>
+
+        <header>
+            <h1>🧪 Качественные реакции на катионы <span class="grade-badge">8 класс</span></h1>
+            <p class="subtitle">Определите катионы металлов по признакам реакций: осадок, цвет, газ.</p>
+        </header>
+
+        <div class="ui-layer">
+            <div class="status-bar" id="selectedTubeStatus">Выберите пробирку</div>
+
+            <div class="controls-area">
+                <div class="panel reagents-panel">
+                    <h3>Реагенты</h3>
+                    <div class="reagent-grid">
+                        <button class="reagent-btn" onclick="app.addReagent('naoh')">
+                            <strong>NaOH</strong> Щёлочь
+                        </button>
+                        <button class="reagent-btn" onclick="app.addReagent('na2co3')">
+                            <strong>Na₂CO₃</strong> Сода
+                        </button>
+                        <button class="reagent-btn" onclick="app.addReagent('na2so4')">
+                            <strong>Na₂SO₄</strong> Сульфат натрия
+                        </button>
+                        <button class="reagent-btn" onclick="app.addReagent('nacl')">
+                            <strong>NaCl</strong> Поваренная соль
+                        </button>
+                        <button class="reagent-btn" onclick="app.resetTube()">
+                            <strong>↺ Сброс</strong> Очистить пробирку
+                        </button>
+                    </div>
+                    <div class="hint-box">
+                        <strong>💡 Подсказка:</strong> Обращайте внимание на цвет осадка и выделение газа — это признаки химических реакций.
+                    </div>
+                </div>
+
+                <div class="panel log-panel">
+                    <div class="log-header">
+                        <h3>📝 Журнал наблюдений</h3>
+                        <span class="log-counter" id="logCounter">0</span>
+                    </div>
+                    <div class="log-entries" id="logEntries">
+                        <div class="log-placeholder" id="logPlaceholder">
+                            Проведите опыты с пробирками — результаты появятся здесь
+                        </div>
+                        <ul id="observationLog"></ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="notification" class="notification">Сообщение</div>
+        </div>
+
+        <div class="answer-panel" id="answerPanel">
+            <h3>🎯 Определение катионов</h3>
+            <p>На основе проведённых опытов определите, какой катион в каждой пробирке:</p>
+            <div id="answerRows"></div>
+
+            <div class="answer-buttons">
+                <button class="btn-check" id="checkBtn" onclick="app.checkAnswers()">✓ Проверить</button>
+                <button class="btn-retry" id="retryBtn" onclick="app.retryAnswers()" style="display: none;">↺ Ещё раз</button>
+            </div>
+
+            <div class="score-display" id="scoreDisplay"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        const BACKGROUND_IMAGE = 'фон.jpg';
+
+        const CATION_OPTIONS = [
+            { key: 'Cu', label: 'Cu²⁺ (медь)' },
+            { key: 'Fe2', label: 'Fe²⁺ (железо II)' },
+            { key: 'Fe3', label: 'Fe³⁺ (железо III)' },
+            { key: 'Ag', label: 'Ag⁺ (серебро)' },
+            { key: 'Ca', label: 'Ca²⁺ (кальций)' },
+            { key: 'Ba', label: 'Ba²⁺ (барий)' }
+        ];
+
+        const CHEM_DATA = {
+            'Cu': { name: 'Медь (Cu²⁺)', color: 0xdbeafe, salt: 'CuSO₄' },
+            'Fe2': { name: 'Железо II (Fe²⁺)', color: 0xd1fae5, salt: 'FeSO₄' },
+            'Fe3': { name: 'Железо III (Fe³⁺)', color: 0xfef9c3, salt: 'FeCl₃' },
+            'Ag': { name: 'Серебро (Ag⁺)', color: 0xf8fafc, salt: 'AgNO₃' },
+            'Ca': { name: 'Кальций (Ca²⁺)', color: 0xf8fafc, salt: 'CaCl₂' },
+            'Ba': { name: 'Барий (Ba²⁺)', color: 0xf8fafc, salt: 'BaCl₂' }
+        };
+
+        const REACTIONS = {
+            'naoh': {
+                'Cu': { type: 'precipitate', color: 0x60a5fa, desc: 'Голубой студенистый осадок', equation: 'CuSO₄ + 2NaOH → Cu(OH)₂↓ + Na₂SO₄' },
+                'Fe2': { type: 'precipitate', color: 0x22c55e, desc: 'Зелёный осадок', equation: 'FeSO₄ + 2NaOH → Fe(OH)₂↓ + Na₂SO₄' },
+                'Fe3': { type: 'precipitate', color: 0xb45309, desc: 'Буро-красный осадок', equation: 'FeCl₃ + 3NaOH → Fe(OH)₃↓ + 3NaCl' },
+                'Ag': { type: 'precipitate', color: 0x78350f, desc: 'Бурый осадок (Ag₂O)', equation: '2AgNO₃ + 2NaOH → Ag₂O↓ + 2NaNO₃ + H₂O' },
+                'Ca': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Ba': { type: 'none', desc: 'Нет видимых изменений', equation: '' }
+            },
+            'na2co3': {
+                'Cu': { type: 'precipitate', color: 0x60a5fa, desc: 'Голубовато-зелёный осадок', equation: 'CuSO₄ + Na₂CO₃ → CuCO₃↓ + Na₂SO₄' },
+                'Fe2': { type: 'precipitate', color: 0x86efac, desc: 'Светло-зелёный осадок', equation: 'FeSO₄ + Na₂CO₃ → FeCO₃↓ + Na₂SO₄' },
+                'Fe3': { type: 'precipitate_gas', color: 0xb45309, desc: 'Буро-красный осадок + выделение газа', equation: '2FeCl₃ + 3Na₂CO₃ + 3H₂O → 2Fe(OH)₃↓ + 6NaCl + 3CO₂↑' },
+                'Ag': { type: 'precipitate', color: 0xfde68a, desc: 'Светло-жёлтый осадок', equation: '2AgNO₃ + Na₂CO₃ → Ag₂CO₃↓ + 2NaNO₃' },
+                'Ca': { type: 'precipitate', color: 0xffffff, desc: 'Белый кристаллический осадок', equation: 'CaCl₂ + Na₂CO₃ → CaCO₃↓ + 2NaCl' },
+                'Ba': { type: 'precipitate', color: 0xffffff, desc: 'Белый кристаллический осадок', equation: 'BaCl₂ + Na₂CO₃ → BaCO₃↓ + 2NaCl' }
+            },
+            'na2so4': {
+                'Cu': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Fe2': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Fe3': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Ag': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Ca': { type: 'precipitate', color: 0xffffff, desc: 'Слабый белый осадок (малорастворимое вещество)', equation: 'CaCl₂ + Na₂SO₄ → CaSO₄↓ + 2NaCl' },
+                'Ba': { type: 'precipitate', color: 0xffffff, desc: 'Белый плотный осадок (нерастворимое вещество)', equation: 'BaCl₂ + Na₂SO₄ → BaSO₄↓ + 2NaCl' }
+            },
+            'nacl': {
+                'Cu': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Fe2': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Fe3': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Ag': { type: 'precipitate', color: 0xffffff, desc: 'Белый творожистый осадок', equation: 'AgNO₃ + NaCl → AgCl↓ + NaNO₃' },
+                'Ca': { type: 'none', desc: 'Нет видимых изменений', equation: '' },
+                'Ba': { type: 'none', desc: 'Нет видимых изменений', equation: '' }
+            }
+        };
+
+        const REAGENT_NAMES = {
+            'naoh': 'NaOH', 
+            'na2co3': 'Na₂CO₃', 
+            'na2so4': 'Na₂SO₄',
+            'nacl': 'NaCl'
+        };
+
+        class LabApp {
+            constructor() {
+                this.container = null;
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.labelRenderer = null;
+                this.controls = null;
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+                
+                this.tubes = [];
+                this.selectedTubeIndex = -1;
+                this.particles = [];
+                this.answersChecked = false;
+                this.logCount = 0;
+                this.experimentStarted = false;
+                
+                document.getElementById('loader').style.display = 'none';
+                
+                window.addEventListener('resize', () => {
+                    if (this.experimentStarted) this.onWindowResize();
+                });
+            }
+
+            startExperiment() {
+                const introScreen = document.getElementById('introScreen');
+                const mainApp = document.getElementById('mainApp');
+                const progress = document.getElementById('introProgress');
+                
+                progress.style.width = '50%';
+                
+                setTimeout(() => {
+                    introScreen.style.transition = 'opacity 0.5s ease';
+                    introScreen.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        introScreen.style.display = 'none';
+                        mainApp.style.display = 'block';
+                        progress.style.width = '100%';
+                        
+                        this.container = document.getElementById('canvas-container');
+                        this.init();
+                        this.createLab();
+                        this.buildAnswerPanel();
+                        this.experimentStarted = true;
+                        this.animate();
+                        
+                        this.container.addEventListener('pointerdown', (e) => this.onPointerDown(e));
+                    }, 500);
+                }, 400);
+            }
+
+            init() {
+                this.scene = new THREE.Scene();
+
+                if (BACKGROUND_IMAGE) {
+                    const textureLoader = new THREE.TextureLoader();
+                    textureLoader.load(
+                        BACKGROUND_IMAGE,
+                        (texture) => {
+                            texture.colorSpace = THREE.SRGBColorSpace;
+                            this.scene.background = texture;
+                        },
+                        undefined,
+                        (err) => {
+                            console.warn('Не удалось загрузить фон "' + BACKGROUND_IMAGE + '", используется градиент:', err);
+                            this.scene.background = this.createGradientBackground();
+                        }
+                    );
+                } else {
+                    this.scene.background = this.createGradientBackground();
+                }
+
+                this.scene.fog = new THREE.Fog(0xf1f5f9, 10, 50);
+
+                const aspect = this.container.clientWidth / this.container.clientHeight;
+                this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+                this.camera.position.set(0, 5, 14);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.container.appendChild(this.renderer.domElement);
+
+                this.labelRenderer = new CSS2DRenderer();
+                this.labelRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
+                this.labelRenderer.domElement.style.position = 'absolute';
+                this.labelRenderer.domElement.style.top = '0';
+                this.labelRenderer.domElement.style.left = '0';
+                this.labelRenderer.domElement.style.pointerEvents = 'none';
+                this.container.appendChild(this.labelRenderer.domElement);
+
+                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+                this.controls.enableDamping = true;
+                this.controls.dampingFactor = 0.05;
+                this.controls.maxPolarAngle = Math.PI / 2 - 0.1;
+                this.controls.minDistance = 5;
+                this.controls.maxDistance = 20;
+                this.controls.maxAzimuthAngle = Math.PI / 3;
+                this.controls.minAzimuthAngle = -Math.PI / 3;
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                this.scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+                dirLight.position.set(5, 10, 7);
+                dirLight.castShadow = true;
+                dirLight.shadow.mapSize.width = 2048;
+                dirLight.shadow.mapSize.height = 2048;
+                this.scene.add(dirLight);
+
+                const fillLight = new THREE.DirectionalLight(0xe0f2fe, 0.5);
+                fillLight.position.set(-5, 2, -5);
+                this.scene.add(fillLight);
+            }
+
+            createGradientBackground() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+                gradient.addColorStop(0, '#e0e7ff');
+                gradient.addColorStop(0.5, '#f1f5f9');
+                gradient.addColorStop(1, '#dbeafe');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 512, 512);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.colorSpace = THREE.SRGBColorSpace;
+                return texture;
+            }
+
+            createLab() {
+                const tableGeo = new THREE.BoxGeometry(20, 0.5, 10);
+                const tableMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
+                const table = new THREE.Mesh(tableGeo, tableMat);
+                table.position.y = -0.25;
+                table.receiveShadow = true;
+                this.scene.add(table);
+
+                const rackGroup = new THREE.Group();
+                rackGroup.position.x = -0.5;
+                
+                const rackMat = new THREE.MeshPhysicalMaterial({
+                    color: 0xe2e8f0,
+                    metalness: 0.0,
+                    roughness: 0.05,
+                    transmission: 0.85,
+                    thickness: 0.6,
+                    transparent: true,
+                    opacity: 0.4,
+                    clearcoat: 0.4,
+                    clearcoatRoughness: 0.1,
+                    ior: 1.5
+                });
+                
+                const baseGeo = new THREE.BoxGeometry(14, 0.2, 3);
+                const base = new THREE.Mesh(baseGeo, rackMat);
+                base.position.y = 0.1;
+                base.receiveShadow = true;
+                rackGroup.add(base);
+
+                const backGeo = new THREE.BoxGeometry(14, 4, 0.15);
+                const back = new THREE.Mesh(backGeo, rackMat);
+                back.position.set(0, 2, -1.4);
+                back.castShadow = true;
+                back.receiveShadow = true;
+                rackGroup.add(back);
+
+                this.scene.add(rackGroup);
+
+                const tubePositions = [-5, -3, -1, 1, 3, 5];
+                const cations = ['Cu', 'Fe2', 'Fe3', 'Ag', 'Ca', 'Ba'];
+
+                tubePositions.forEach((x, index) => {
+                    this.createTube(x - 0.5, 0.5, -1.2, index, cations[index]);
+                });
+            }
+
+            createTube(x, y, z, index, cationKey) {
+                const tubeGroup = new THREE.Group();
+                tubeGroup.position.set(x, y, z);
+
+                const glassMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xffffff,
+                    metalness: 0,
+                    roughness: 0,
+                    transmission: 0.95,
+                    thickness: 0.5,
+                    transparent: true,
+                    opacity: 0.3
+                });
+
+                const radiusTop = 0.4;
+                const radiusBottom = 0.4;
+                const height = 3;
+                const segments = 32;
+
+                const tubeGeo = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments, 1, true);
+                const tubeMesh = new THREE.Mesh(tubeGeo, glassMaterial);
+                tubeMesh.position.y = height / 2;
+                tubeMesh.castShadow = true;
+                
+                const tubeEdges = new THREE.EdgesGeometry(tubeGeo, 15);
+                const tubeOutline = new THREE.LineSegments(
+                    tubeEdges,
+                    new THREE.LineBasicMaterial({ 
+                        color: 0x000000, 
+                        linewidth: 1,
+                        transparent: true,
+                        opacity: 0.85
+                    })
+                );
+                tubeOutline.position.y = height / 2;
+                tubeGroup.add(tubeOutline);
+
+                const rimGeo = new THREE.TorusGeometry(radiusTop, 0.05, 16, 32);
+                const rimMesh = new THREE.Mesh(rimGeo, glassMaterial);
+                rimMesh.rotation.x = Math.PI / 2;
+                rimMesh.position.y = height;
+
+                const rimEdges = new THREE.EdgesGeometry(rimGeo, 15);
+                const rimOutline = new THREE.LineSegments(
+                    rimEdges,
+                    new THREE.LineBasicMaterial({ 
+                        color: 0x000000, 
+                        transparent: true,
+                        opacity: 0.7
+                    })
+                );
+                rimOutline.rotation.x = Math.PI / 2;
+                rimOutline.position.y = height;
+                tubeGroup.add(rimOutline);
+
+                const bottomGeo = new THREE.SphereGeometry(radiusBottom, segments, 16, 0, Math.PI * 2, 0, Math.PI/2);
+                const bottomMesh = new THREE.Mesh(bottomGeo, glassMaterial);
+                bottomMesh.position.y = 0;
+                bottomMesh.scale.y = 0.5;
+
+                tubeGroup.add(tubeMesh);
+                tubeGroup.add(rimMesh);
+                tubeGroup.add(bottomMesh);
+
+                const liquidHeight = height * 0.6;
+                const liquidGeo = new THREE.CylinderGeometry(radiusTop - 0.05, radiusBottom - 0.05, liquidHeight, segments);
+                const initialColor = CHEM_DATA[cationKey].color;
+                
+                const liquidMat = new THREE.MeshPhysicalMaterial({
+                    color: initialColor,
+                    transmission: 0.85,
+                    opacity: 0.55,
+                    transparent: true,
+                    roughness: 0.15,
+                    metalness: 0.05
+                });
+                
+                const liquidMesh = new THREE.Mesh(liquidGeo, liquidMat);
+                liquidMesh.position.y = liquidHeight / 2 + 0.1;
+                tubeGroup.add(liquidMesh);
+
+                const ringGeo = new THREE.TorusGeometry(0.55, 0.06, 16, 32);
+                const ringMat = new THREE.MeshBasicMaterial({ 
+                    color: 0x3b82f6, 
+                    transparent: true, 
+                    opacity: 0 
+                });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.rotation.x = Math.PI / 2;
+                ringMesh.position.y = 0.1;
+                tubeGroup.add(ringMesh);
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'tube-label';
+                labelDiv.textContent = `№${index + 1}`;
+                const label = new CSS2DObject(labelDiv);
+                label.position.set(0, -0.4, 0);
+                tubeGroup.add(label);
+
+                const tubeData = {
+                    group: tubeGroup,
+                    liquid: liquidMesh,
+                    precipitate: null,
+                    cation: cationKey,
+                    id: index,
+                    label: `Пробирка ${index + 1}`,
+                    labelDiv: labelDiv,
+                    indicatorRing: ringMesh
+                };
+
+                tubeMesh.userData = { parent: tubeData };
+                liquidMesh.userData = { parent: tubeData };
+                rimMesh.userData = { parent: tubeData };
+
+                this.tubes.push(tubeData);
+                this.scene.add(tubeGroup);
+            }
+
+            buildAnswerPanel() {
+                const container = document.getElementById('answerRows');
+                container.innerHTML = '';
+                
+                this.tubes.forEach(tube => {
+                    const block = document.createElement('div');
+                    block.className = 'tube-answer-block';
+                    block.dataset.tubeId = tube.id;
+                    
+                    const optionsHtml = CATION_OPTIONS.map(opt => 
+                        `<option value="${opt.key}">${opt.label}</option>`
+                    ).join('');
+                    
+                    block.innerHTML = `
+                        <div class="answer-row">
+                            <label>№${tube.id + 1}:</label>
+                            <select class="cation-select">
+                                <option value="">— выберите —</option>
+                                ${optionsHtml}
+                            </select>
+                            <div class="status-icon"></div>
+                        </div>
+                        <div class="review-details"></div>
+                    `;
+                    
+                    const select = block.querySelector('select');
+                    select.addEventListener('change', () => this.onAnswerChange(tube.id));
+                    
+                    container.appendChild(block);
+                });
+            }
+
+            onAnswerChange(tubeId) {
+                if (this.answersChecked) {
+                    const block = document.querySelector(`.tube-answer-block[data-tube-id="${tubeId}"]`);
+                    block.classList.remove('correct', 'incorrect');
+                    block.querySelector('.status-icon').innerHTML = '';
+                    block.querySelector('.review-details').innerHTML = '';
+                    
+                    const anyChecked = Array.from(document.querySelectorAll('.tube-answer-block'))
+                        .some(b => b.classList.contains('correct') || b.classList.contains('incorrect'));
+                    
+                    if (!anyChecked) {
+                        this.answersChecked = false;
+                        document.getElementById('retryBtn').style.display = 'none';
+                        document.getElementById('scoreDisplay').classList.remove('show');
+                    }
+                }
+            }
+
+            onPointerDown(event) {
+                const rect = this.container.getBoundingClientRect();
+                this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+
+                if (intersects.length > 0) {
+                    const hit = intersects.find(i => i.object.userData.parent);
+                    if (hit) {
+                        this.selectTube(hit.object.userData.parent);
+                    }
+                }
+            }
+
+            selectTube(tubeData) {
+                this.selectedTubeIndex = tubeData.id;
+                document.getElementById('selectedTubeStatus').innerText = 
+                    `Выбрана: ${tubeData.label} (состав скрыт)`;
+                this.showNotification(`Выбрана пробирка №${tubeData.id + 1}`);
+            }
+
+            addReagent(reagentKey) {
+                if (this.selectedTubeIndex === -1) {
+                    this.showNotification("Сначала выберите пробирку!");
+                    return;
+                }
+
+                const tube = this.tubes[this.selectedTubeIndex];
+                const cation = tube.cation;
+                const reaction = REACTIONS[reagentKey][cation] || { type: 'none', desc: 'Нет изменений', equation: '' };
+
+                this.applyReactionEffect(tube, reaction, reagentKey);
+                this.logObservation(tube.id + 1, reagentKey, reaction);
+            }
+
+            applyReactionEffect(tube, reaction, reagentKey) {
+                const liquidMat = tube.liquid.material;
+
+                if (reaction.color) {
+                    const targetColor = new THREE.Color(reaction.color);
+                    this.animateColor(liquidMat.color, targetColor, 1000);
+                    liquidMat.opacity = 0.85;
+                    liquidMat.transmission = 0.3;
+                }
+
+                if (reaction.type === 'precipitate' || reaction.type === 'precipitate_gas') {
+                    if (!tube.precipitate) {
+                        const geo = new THREE.ConeGeometry(0.3, 0.5, 16);
+                        const mat = new THREE.MeshStandardMaterial({ 
+                            color: reaction.color || 0xffffff,
+                            roughness: 1,
+                            metalness: 0
+                        });
+                        const mesh = new THREE.Mesh(geo, mat);
+                        mesh.position.y = 0.25;
+                        tube.group.add(mesh);
+                        tube.precipitate = mesh;
+                    } else {
+                        tube.precipitate.material.color.setHex(reaction.color || 0xffffff);
+                    }
+                    liquidMat.opacity = 0.95;
+                    liquidMat.transmission = 0.1;
+                }
+
+                if (reaction.type === 'precipitate_gas' || reaction.type === 'gas') {
+                    this.emitGas(tube.group.position);
+                }
+            }
+
+            emitGas(position) {
+                const particleCount = 20;
+                const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = new THREE.Mesh(geometry, material);
+                    particle.position.set(
+                        position.x + (Math.random() - 0.5) * 0.5,
+                        position.y + 3,
+                        position.z + (Math.random() - 0.5) * 0.5
+                    );
+                    particle.userData = {
+                        velocity: new THREE.Vector3(0, 0.02 + Math.random() * 0.03, 0),
+                        life: 1.0
+                    };
+                    this.scene.add(particle);
+                    this.particles.push(particle);
+                }
+            }
+
+            animateColor(currentColor, targetColor, duration) {
+                const startColor = currentColor.clone();
+                const startTime = Date.now();
+
+                const animate = () => {
+                    const now = Date.now();
+                    const progress = Math.min((now - startTime) / duration, 1);
+                    currentColor.lerpColors(startColor, targetColor, progress);
+                    if (progress < 1) requestAnimationFrame(animate);
+                };
+                animate();
+            }
+
+            resetTube() {
+                if (this.selectedTubeIndex === -1) return;
+                const tube = this.tubes[this.selectedTubeIndex];
+                tube.liquid.material.color.setHex(CHEM_DATA[tube.cation].color);
+                tube.liquid.material.transmission = 0.85;
+                tube.liquid.material.opacity = 0.55;
+                if (tube.precipitate) {
+                    tube.group.remove(tube.precipitate);
+                    tube.precipitate = null;
+                }
+                this.showNotification(`Пробирка №${tube.id + 1} сброшена`);
+            }
+
+            logObservation(tubeNum, reagent, reaction) {
+                const list = document.getElementById('observationLog');
+                const placeholder = document.getElementById('logPlaceholder');
+                const counter = document.getElementById('logCounter');
+                const entriesContainer = document.getElementById('logEntries');
+                
+                if (placeholder) placeholder.style.display = 'none';
+                
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>№${tubeNum} + ${REAGENT_NAMES[reagent]}</strong>${reaction.desc}`;
+                list.insertBefore(li, list.firstChild);
+                
+                this.logCount++;
+                counter.textContent = this.logCount;
+                counter.classList.add('has-entries');
+                entriesContainer.scrollTop = 0;
+            }
+
+            showNotification(text) {
+                const el = document.getElementById('notification');
+                el.innerText = text;
+                el.classList.add('show');
+                setTimeout(() => el.classList.remove('show'), 2000);
+            }
+
+            checkAnswers() {
+                const blocks = document.querySelectorAll('.tube-answer-block');
+                let allFilled = true;
+                let correctCount = 0;
+
+                blocks.forEach(block => {
+                    const tubeId = parseInt(block.dataset.tubeId);
+                    const tube = this.tubes[tubeId];
+                    const select = block.querySelector('.cation-select');
+                    const userAnswer = select.value;
+                    const correctAnswer = tube.cation;
+                    const icon = block.querySelector('.status-icon');
+                    const reviewDetails = block.querySelector('.review-details');
+
+                    if (!userAnswer) { allFilled = false; return; }
+
+                    const isCorrect = userAnswer === correctAnswer;
+                    block.classList.remove('correct', 'incorrect');
+
+                    if (isCorrect) {
+                        block.classList.add('correct');
+                        icon.innerHTML = '✓';
+                        icon.style.color = 'var(--success)';
+                        correctCount++;
+                        this.showTubeIndicator(tube, 'correct');
+                    } else {
+                        block.classList.add('incorrect');
+                        icon.innerHTML = '✗';
+                        icon.style.color = 'var(--danger)';
+                        this.showTubeIndicator(tube, 'incorrect');
+                    }
+
+                    const equations = [];
+                    for (const reagentKey of ['naoh', 'na2co3', 'na2so4', 'nacl']) {
+                        const r = REACTIONS[reagentKey][correctAnswer];
+                        if (r && r.equation) {
+                            equations.push({ reagent: REAGENT_NAMES[reagentKey], equation: r.equation });
+                        }
+                    }
+
+                    let equationsHtml = '';
+                    if (equations.length > 0) {
+                        equationsHtml = `
+                            <div class="equations-title">Уравнения реакций:</div>
+                            ${equations.map(eq => `
+                                <div class="equation-line">
+                                    <span class="reagent-tag">+ ${eq.reagent}</span>
+                                    ${eq.equation}
+                                </div>
+                            `).join('')}
+                        `;
+                    } else {
+                        equationsHtml = `<div class="no-reaction">Характерных реакций с данными реагентами нет</div>`;
+                    }
+
+                    const userAnswerInfo = !isCorrect && CHEM_DATA[userAnswer] 
+                        ? `<div style="font-size: 0.78rem; color: var(--danger); margin-top: 3px;">Ваш ответ: ${CHEM_DATA[userAnswer].name}</div>`
+                        : '';
+
+                    reviewDetails.innerHTML = `
+                        <div class="correct-cation">
+                            <span>${isCorrect ? '✓' : '→'}</span>
+                            <span>Правильный ответ: ${CHEM_DATA[correctAnswer].name}</span>
+                        </div>
+                        ${userAnswerInfo}
+                        ${equationsHtml}
+                    `;
+                });
+
+                if (!allFilled) {
+                    this.showNotification("Заполните все поля перед проверкой!");
+                    return;
+                }
+
+                this.answersChecked = true;
+                document.getElementById('retryBtn').style.display = 'block';
+
+                const total = this.tubes.length;
+                const percentage = Math.round((correctCount / total) * 100);
+                const scoreDisplay = document.getElementById('scoreDisplay');
+                scoreDisplay.classList.add('show');
+                scoreDisplay.classList.remove('good', 'medium', 'poor');
+                
+                if (percentage >= 80) scoreDisplay.classList.add('good');
+                else if (percentage >= 50) scoreDisplay.classList.add('medium');
+                else scoreDisplay.classList.add('poor');
+                
+                scoreDisplay.innerHTML = `Результат: <strong>${correctCount} из ${total}</strong> (${percentage}%)`;
+            }
+
+            showTubeIndicator(tube, status) {
+                const ring = tube.indicatorRing;
+                ring.material.color.setHex(status === 'correct' ? 0x16a34a : 0xdc2626);
+                ring.material.opacity = 0;
+                const startTime = Date.now();
+                const animate = () => {
+                    const progress = Math.min((Date.now() - startTime) / 500, 1);
+                    ring.material.opacity = progress * 0.9;
+                    ring.scale.set(1 + Math.sin(progress * Math.PI) * 0.2, 1, 1 + Math.sin(progress * Math.PI) * 0.2);
+                    if (progress < 1) requestAnimationFrame(animate);
+                };
+                animate();
+            }
+
+            resetAnswerVisuals() {
+                document.querySelectorAll('.tube-answer-block').forEach(block => {
+                    block.classList.remove('correct', 'incorrect');
+                    block.querySelector('.status-icon').innerHTML = '';
+                    block.querySelector('.review-details').innerHTML = '';
+                });
+                this.tubes.forEach(tube => {
+                    tube.indicatorRing.material.opacity = 0;
+                });
+            }
+
+            retryAnswers() {
+                this.resetAnswerVisuals();
+                document.querySelectorAll('.cation-select').forEach(s => s.value = '');
+                document.getElementById('retryBtn').style.display = 'none';
+                document.getElementById('scoreDisplay').classList.remove('show');
+                this.answersChecked = false;
+                this.showNotification("Попробуйте снова!");
+            }
+
+            onWindowResize() {
+                if (!this.container) return;
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                this.camera.aspect = width / height;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(width, height);
+                this.labelRenderer.setSize(width, height);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.controls.update();
+
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.position.add(p.userData.velocity);
+                    p.userData.life -= 0.01;
+                    p.material.opacity = p.userData.life * 0.6;
+                    if (p.userData.life <= 0) {
+                        this.scene.remove(p);
+                        this.particles.splice(i, 1);
+                    }
+                }
+
+                this.renderer.render(this.scene, this.camera);
+                this.labelRenderer.render(this.scene, this.camera);
+            }
+        }
+
+        window.app = new LabApp();
+    </script>
+</body>
+</html>
